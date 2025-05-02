@@ -15,7 +15,7 @@ export type Camera = {
 
 export enum LayerType {
   Rectangle,
-  Ellipsie,
+  Ellipse,
   Path,
   Text,
 }
@@ -33,8 +33,8 @@ export type RectangleLayer = {
   radius?: number; // For rounded corners
 };
 
-export type EllipsieLayer = {
-  type: LayerType.Ellipsie;
+export type EllipseLayer = {
+  type: LayerType.Ellipse;
   x: number;
   y: number;
   width: number;
@@ -74,9 +74,25 @@ export type TextLayer = {
   opacity: number;
 };
 
-export type Layer = RectangleLayer | EllipsieLayer | PathLayer | TextLayer;
+export type Layer = RectangleLayer | EllipseLayer | PathLayer | TextLayer;
 
 export type Point = {
   x: number;
   y: number;
 };
+
+export type CanvasState =
+  | {
+      layerType:
+        | LayerType.Rectangle
+        | LayerType.Ellipse
+        | LayerType.Path
+        | LayerType.Text;
+      mode: CanvasMode.Inserting;
+    }
+  | { mode: CanvasMode.None };
+  
+export enum CanvasMode {
+  None,
+  Inserting,
+}

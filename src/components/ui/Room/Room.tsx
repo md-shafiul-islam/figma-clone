@@ -25,7 +25,7 @@ const Room: React.FC<RoomProps> = ({ children }) => {
           pencilDraft: null,
         }}
         initialStorage={{
-          roomColor: { r: 30, g: 30, b: 30, a: 1 },
+          roomColor: { r: 0, g: 0, b: 0, a: .6 },
           layers: new LiveMap<string, LiveObject<Layer>>(),
           layerIds: new LiveList([]),
         }}
