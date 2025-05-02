@@ -170,7 +170,7 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
         </div>
       </main>
       <div className="flex w-full flex-row">
-        <ToolsBar />
+        <ToolsBar canvasState={canvasState} setCanvasState={setCanvasState} />
       </div>
     </div>
   );

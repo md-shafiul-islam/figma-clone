@@ -90,9 +90,23 @@ export type CanvasState =
         | LayerType.Text;
       mode: CanvasMode.Inserting;
     }
-  | { mode: CanvasMode.None };
-  
+  | { mode: CanvasMode.None }
+  | { mode: CanvasMode.Dragging; origin: Point | null };
+
 export enum CanvasMode {
   None,
   Inserting,
+  Dragging,
+  Selecting,
+  Resizing,
+  Drawing,
+  Editing,
+  Erasing,
+  Panning,
+  Rotating,
+  Transforming,
+  Grouping,
+  Ungrouping,
+  Cloning,
+  Duplicating,
 }
