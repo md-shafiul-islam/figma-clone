@@ -14,10 +14,10 @@ export type Camera = {
 };
 
 export enum LayerType {
-  Rectangle,
-  Ellipse,
-  Path,
-  Text,
+  Rectangle = "rectangle",
+  Ellipse = "ellipse",
+  Path = "path",
+  Text = "text",
 }
 
 export type RectangleLayer = {
@@ -91,22 +91,27 @@ export type CanvasState =
       mode: CanvasMode.Inserting;
     }
   | { mode: CanvasMode.None }
-  | { mode: CanvasMode.Dragging; origin: Point | null };
+  | { mode: CanvasMode.Dragging; origin: Point | null }
+  | { mode: CanvasMode.Pencil }
+  | { mode: CanvasMode.Selecting; origin: Point | null }
+  | { mode: CanvasMode.TYPING };
 
 export enum CanvasMode {
-  None,
-  Inserting,
-  Dragging,
-  Selecting,
-  Resizing,
-  Drawing,
-  Editing,
-  Erasing,
-  Panning,
-  Rotating,
-  Transforming,
-  Grouping,
-  Ungrouping,
-  Cloning,
-  Duplicating,
+  None = "None",
+  Inserting = "Inserting",
+  TYPING = "Typing",
+  Dragging = "Dragging",
+  Selecting = "Selecting",
+  Resizing = "Resizing",
+  Pencil = "Pencil",
+  Drawing = "Drawing",
+  Editing = "Editing",
+  Erasing = "Erasing",
+  Panning = "Panning",
+  Rotating = "Rotating",
+  Transforming = "Transforming",
+  Grouping = "Grouping",
+  Ungrouping = "Ungrouping",
+  Cloning = "Cloning",
+  Duplicating = "Duplicating",
 }

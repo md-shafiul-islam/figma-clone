@@ -8,7 +8,7 @@ interface ToolItemProps {
   isActive?: boolean;
   disabled?: boolean;
   className: string;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   children?: React.ReactNode;
 }
 
@@ -22,7 +22,7 @@ const ToolItem: React.FC<ToolItemProps> = ({
   return (
     <Button
       variant={isActive ? "outline" : "default"}
-      className={cn("", className)}
+      className={cn("outline outline-transparent", className)}
       disabled={disabled}
       onClick={onClick}
     >

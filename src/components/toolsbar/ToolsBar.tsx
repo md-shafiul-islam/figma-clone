@@ -1,30 +1,58 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { Bold, Circle, Hand, MousePointer2, Square } from "lucide-react";
+import {
+  Bold,
+  Circle,
+  Hand,
+  MousePointer2,
+  Pencil,
+  Square,
+  TextCursor,
+  Type,
+  ZoomIn,
+  ZoomOut,
+} from "lucide-react";
 
 import { CanvasMode, LayerType, type CanvasState } from "@/types/types";
 import ToolItem from "./ToolItem";
+import { pointerEventToCanvasPoint } from "@/lib/converter";
 
 interface ToolsBarProps {
   canvasState: CanvasState;
   setCanvasState: (canvasState: CanvasState) => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  canZoomIn: boolean;
+  canZoomOut: boolean;
 }
 
 const ToolsBar: React.FC<ToolsBarProps> = ({
   canvasState,
   setCanvasState,
+  onZoomIn,
+  onZoomOut,
+  canZoomIn,
+  canZoomOut,
   ...props
 }) => {
   const handleToolClick = (canvas: CanvasState) => {
-    setCanvasState(canvas);
+    const isSameMode = canvasState?.mode === canvas.mode;
+    const isSameLayer = canvasState?.layerType === canvas?.layerType;
+
+    if (isSameMode) {
+      if (isSameLayer) {
+        setCanvasState({ mode: CanvasMode.None });
+      } else {
+        setCanvasState(canvas);
+      }
+    } else {
+      setCanvasState(canvas);
+    }
   };
 
-  const checkIsActive = (type: any) => {
+  const checkIsActive = (type: LayerType): boolean => {
     if (canvasState?.layerType === type) {
-      return (
-        canvasState?.mode === CanvasMode.Inserting ||
-        canvasState?.mode === CanvasMode.Dragging
-      );
+      return canvasState?.mode === CanvasMode.Inserting;
     }
 
     return false;
@@ -36,13 +64,15 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
         <div className="z-40 flex w-full flex-row items-center justify-center">
           <div className="flex flex-row gap-5">
             <ToolItem
-              className="cursor-pointer"
-              onClick={() =>
+              className="z-50 cursor-pointer"
+              onClick={(e) => {
+                console.log("onClick Mouse Pointer ", e);
                 handleToolClick({
-                  mode: CanvasMode.None,
-                })
-              }
-              isActive={checkIsActive(CanvasMode.Dragging)}
+                  mode: CanvasMode.Dragging,
+                  origin: null,
+                });
+              }}
+              isActive={canvasState?.mode === CanvasMode.Dragging}
               disabled={false}
             >
               <MousePointer2 />
@@ -73,6 +103,41 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
             >
               <Circle />
             </ToolItem>
+            <ToolItem
+              className="cursor-pointer"
+              onClick={() =>
+                handleToolClick({
+                  mode: CanvasMode.Pencil,
+                })
+              }
+              isActive={canvasState.mode === CanvasMode.Pencil}
+              disabled={false}
+            >
+              <Pencil />
+            </ToolItem>
+
+            <ToolItem
+              className="cursor-pointer"
+              onClick={() =>
+                handleToolClick({
+                  mode: CanvasMode.Inserting,
+                  layerType: LayerType.Text,
+                })
+              }
+              isActive={checkIsActive(LayerType.Text)}
+              disabled={false}
+            >
+              <TextCursor />
+            </ToolItem>
+
+            <div className="flex flex-row gap-3">
+              <Button onClick={onZoomIn} disabled={!canZoomIn}>
+                <ZoomIn />
+              </Button>
+              <Button onClick={onZoomOut} disabled={!canZoomOut}>
+                <ZoomOut />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
