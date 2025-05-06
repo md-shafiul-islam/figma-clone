@@ -7,6 +7,7 @@ import {
   MousePointer2,
   Pencil,
   Square,
+  SquareMousePointer,
   TextCursor,
   Type,
   ZoomIn,
@@ -66,7 +67,19 @@ const ToolsBar: React.FC<ToolsBarProps> = ({
             <ToolItem
               className="z-50 cursor-pointer"
               onClick={(e) => {
-                console.log("onClick Mouse Pointer ", e);
+                handleToolClick({
+                  mode: CanvasMode.Selecting,
+                  origin: null,
+                });
+              }}
+              isActive={canvasState?.mode === CanvasMode.Selecting}
+              disabled={false}
+            >
+              <SquareMousePointer />
+            </ToolItem>
+            <ToolItem
+              className="z-50 cursor-pointer"
+              onClick={(e) => {
                 handleToolClick({
                   mode: CanvasMode.Dragging,
                   origin: null,

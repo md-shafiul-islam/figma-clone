@@ -5,7 +5,7 @@ import {
   pointerEventToCanvasPoint,
 } from "@/lib/converter";
 import { useMutation, useSelf, useStorage } from "@liveblocks/react";
-import React, { use, useCallback, useEffect, useState } from "react";
+import React, { use, useCallback, useEffect, useRef, useState } from "react";
 import LayerComponent from "./LayerComponent";
 import {
   LayerType,
@@ -14,9 +14,12 @@ import {
   type Point,
   type CanvasState,
   CanvasMode,
+  type EllipseLayer,
+  type PathLayer,
+  type RectangleLayer,
+  type TextLayer,
 } from "@/types/types";
 import { v4 as uuidv4 } from "uuid";
-import { u } from "node_modules/@liveblocks/react/dist/room-CqT08uWZ";
 import { LiveObject } from "@liveblocks/client";
 import ToolsBar from "../toolsbar/ToolsBar";
 import { set } from "zod";
@@ -36,11 +39,26 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
 
   const pencilDraft = useSelf((me) => me.presence.pencilDraft);
 
+  const rafRef = useRef<number | null>(null);
+  const nextPointRef = useRef<{
+    x: number;
+    y: number;
+    pressure: number;
+  } | null>(null);
+
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
 
   const [canvasState, setCanvasState] = useState<CanvasState>({
     mode: CanvasMode.None,
   });
+
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, []);
 
   const insertLayer = useMutation(
     (
@@ -64,7 +82,7 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
 
       switch (layerType) {
         case LayerType.Ellipse:
-          layer = new LiveObject<Layer>({
+          layer = new LiveObject<EllipseLayer>({
             type: LayerType.Ellipse,
             x: position.x,
             y: position.y,
@@ -81,44 +99,27 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
             opacity: 100,
           });
           break;
-        case LayerType.Path:
-          layer = new LiveObject<Layer>({
-            type: LayerType.Rectangle,
-            x: position.x,
-            y: position.y,
-            width: 100,
-            height: 100,
-            fillColor: {
-              r: Math.random() * 255,
-              g: Math.random() * 255,
-              b: Math.random() * 255,
-              a: 1,
-            },
-            strokeColor: { r: 217, g: 217, b: 217, a: 1 },
-            strokeWidth: 1,
-            opacity: 100,
-          });
-          break;
+
         case LayerType.Text:
-          layer = new LiveObject<Layer>({
-            type: LayerType.Rectangle,
+          layer = new LiveObject<TextLayer>({
+            type: LayerType.Text,
             x: position.x,
             y: position.y,
-            width: 100,
-            height: 100,
-            fillColor: {
-              r: Math.random() * 255,
-              g: Math.random() * 255,
-              b: Math.random() * 255,
-              a: 1,
-            },
+            width: 200,
+            height: 50,
+            text: "Text",
+            fontSize: 16,
+            fontFamily: "Arial",
+            fillColor: { r: 0, g: 0, b: 0, a: 1 },
             strokeColor: { r: 217, g: 217, b: 217, a: 1 },
             strokeWidth: 1,
             opacity: 100,
+            fontWeight: 400,
           });
           break;
+
         case LayerType.Rectangle:
-          layer = new LiveObject<Layer>({
+          layer = new LiveObject<RectangleLayer>({
             type: LayerType.Rectangle,
             x: position.x,
             y: position.y,
@@ -136,22 +137,6 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
           });
           break;
         default:
-          layer = new LiveObject<Layer>({
-            type: LayerType.Rectangle,
-            x: position.x,
-            y: position.y,
-            width: 100,
-            height: 100,
-            fillColor: {
-              r: Math.random() * 255,
-              g: Math.random() * 255,
-              b: Math.random() * 255,
-              a: 1,
-            },
-            strokeColor: { r: 217, g: 217, b: 217, a: 1 },
-            strokeWidth: 1,
-            opacity: 100,
-          });
           break;
       }
 
@@ -175,21 +160,32 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
       point: { x: number; y: number },
       e: React.PointerEvent,
     ) => {
-      const { pencilDraft } = self.presence;
-
       if (
-        CanvasMode.Pencil !== canvasState.mode ||
+        canvasState.mode !== CanvasMode.Pencil ||
         e.buttons !== 1 ||
-        pencilDraft === null
+        !Array.isArray(self.presence.pencilDraft)
       ) {
         return;
       }
 
-      setMyPresence({
-        pencilDraft: [...pencilDraft, [point.x, point.y, e.pressure]],
+      // Store the latest point
+      nextPointRef.current = { x: point.x, y: point.y, pressure: e.pressure };
+      // Avoid multiple RAFs
+      if (rafRef.current !== null) return;
+
+      rafRef.current = requestAnimationFrame(() => {
+        const { pencilDraft } = self.presence;
+        const next = nextPointRef.current;
+        rafRef.current = null;
+        console.log("next ", next);
+        if (Array.isArray(pencilDraft) && next) {
+          setMyPresence({
+            pencilDraft: pencilDraft.concat([[next.x, next.y, next.pressure]]),
+          });
+        }
       });
     },
-    [],
+    [canvasState.mode],
   );
 
   const startDrawing = useMutation(
@@ -231,7 +227,7 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
       a: 1,
     });
 
-    const layer = new LiveObject<Layer>(pathLayer);
+    const layer = new LiveObject<PathLayer>(pathLayer);
 
     liveLayers.set(layerId, layer);
     layerIds.push(layerId);
@@ -249,15 +245,11 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
   //   }, []);
 
   const onPointerUpAction = useMutation(
-    ({}, e: React.PointerEvent) => {
+    (_, e: React.PointerEvent) => {
       const point = pointerEventToCanvasPoint(e, camera);
 
-      if (canvasState.mode === CanvasMode.Inserting) {
-        if (canvasState.layerType === LayerType.Ellipse) {
-          insertLayer(LayerType.Ellipse, point);
-        } else if (canvasState.layerType === LayerType.Rectangle) {
-          insertLayer(LayerType.Rectangle, point);
-        }
+      if (canvasState.mode === CanvasMode.Inserting && canvasState.layerType) {
+        insertLayer(canvasState.layerType, point);
       } else if (canvasState.mode === CanvasMode.Dragging) {
         setCanvasState({ mode: CanvasMode.Dragging, origin: null });
       } else if (canvasState.mode === CanvasMode.Pencil) {
@@ -309,14 +301,35 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
           y: cy,
           zoom: camera.zoom,
         }));
-      } else if (canvasState.mode === CanvasMode.Pencil) {
+        return;
+      }
+
+      if (canvasState.mode === CanvasMode.Pencil) {
         continueDrawing(point, e);
+        return;
       }
     },
 
-    [canvasState, setCanvasState, camera, continueDrawing],
+    [canvasState, canvasState.mode, setCanvasState, camera, continueDrawing],
   );
-  console.log("canvasState, ", canvasState);
+
+  const onLayerPointerDownAction = useMutation(
+    ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
+      if (
+        canvasState.mode === CanvasMode.Pencil ||
+        canvasState.mode === CanvasMode.Inserting
+      ) {
+        return;
+      }
+
+      e.stopPropagation();
+
+      if (!self.presence.selection.includes(layerId)) {
+        setMyPresence({ selection: [layerId] });
+      }
+    },
+    [canvasState.mode],
+  );
   return (
     <div className="flex h-screen w-full items-center justify-center">
       <main
@@ -340,7 +353,18 @@ const Canvas: React.FC<CanvasProps> = ({ children, ...props }) => {
             >
               {layerIds &&
                 layerIds.map((layerId) => {
-                  return <LayerComponent key={layerId} id={layerId} />;
+                  return (
+                    <LayerComponent
+                      key={layerId}
+                      id={layerId}
+                      onLayerPointerDown={(e) => {
+                        onLayerPointerDownAction(
+                          e as React.PointerEvent,
+                          layerId,
+                        );
+                      }}
+                    />
+                  );
                 })}
               {pencilDraft !== null && pencilDraft.length > 0 && (
                 <Path

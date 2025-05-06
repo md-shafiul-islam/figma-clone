@@ -8,7 +8,7 @@ interface PathProps {
   fill: string;
   opacity: number;
   points: [number, number, number][];
-  onClick?: (e: React.MouseEvent) => void;
+  onPointerDown?: (e: React.PointerEvent) => void;
 }
 const Path: React.FC<PathProps> = ({
   x,
@@ -17,7 +17,8 @@ const Path: React.FC<PathProps> = ({
   fill,
   opacity,
   points,
-  onClick,
+  onPointerDown = (e) => {},
+  ...props
 }) => {
   const pathData = getSvgPathFromStroke(
     getStroke(points, {
@@ -30,13 +31,13 @@ const Path: React.FC<PathProps> = ({
 
   return (
     <path
+      onPointerDown={onPointerDown}
       style={{ transform: `translate(${x}px, ${y}px)` }}
       d={pathData}
       stroke={stroke}
       strokeWidth={1}
       fill={fill}
       opacity={opacity}
-      onClick={onClick}
     />
   );
 };

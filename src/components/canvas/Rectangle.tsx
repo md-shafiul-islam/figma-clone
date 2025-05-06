@@ -5,9 +5,15 @@ import React from "react";
 interface RectangleProps {
   id: string;
   layer: RectangleLayer;
+  onPointerDown?: (e: React.PointerEvent) => void;
 }
 
-const Rectangle: React.FC<RectangleProps> = ({ id, layer }) => {
+const Rectangle: React.FC<RectangleProps> = ({
+  id,
+  layer,
+  onPointerDown = (e) => {},
+  ...props
+}) => {
   const {
     fillColor,
     height,
@@ -20,7 +26,7 @@ const Rectangle: React.FC<RectangleProps> = ({ id, layer }) => {
     radius,
   } = layer;
   return (
-    <g>
+    <g onPointerDown={onPointerDown}>
       <rect
         style={{ transform: `translate(${x}px, ${y}px)` }}
         width={width}
